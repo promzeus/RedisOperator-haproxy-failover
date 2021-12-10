@@ -1,0 +1,1 @@
+# RedisOperator-haproxy-failover
