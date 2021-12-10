@@ -1,0 +1,22 @@
+{{- if .Values.haproxy.enabled }}
+{{- if and .Values.haproxy.serviceAccount.create .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ template "redis.fullname" . }}-ha
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app: {{ template "redis.fullname" . }}
+    component: {{ template "redis.fullname" . }}-ha
+subjects:
+- kind: ServiceAccount
+  name: {{ template "redis.serviceAccountName" . }}-ha
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ template "redis.fullname" . }}-ha
+{{- end }}
+{{- end }}

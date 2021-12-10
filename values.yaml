@@ -1,0 +1,272 @@
+## Global Docker image parameters
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## Current available global Docker image parameters: imageRegistry and imagePullSecrets
+##
+global:
+  # imageRegistry: myRegistryName
+  # imagePullSecrets:
+  #   - myRegistryKeySecretName
+  # storageClass: myStorageClass
+  redis: {}
+
+# nameOverride: prod-dd-redis
+# fullnameOverride: prod-dd-job-redis
+
+####################################################################################################
+haproxy:
+  enabled: true
+  # Enable if you want a dedicated port in haproxy for redis-slaves
+  readOnly:
+    enabled: true
+    port: 6380
+  replicas: 1
+  image:
+    repository: haproxy
+    tag: 2.4-alpine3.14
+    pullPolicy: IfNotPresent
+
+  ## Custom labels for the haproxy pod
+  labels: {}
+
+  ## Reference to one or more secrets to be used when pulling images
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  imagePullSecrets: []
+  # - name: "image-pull-secret"
+
+  annotations: {}
+  resources: {}
+  emptyDir: {}
+
+  ## PodSecurityPolicy configuration
+  ## ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
+  ##
+  podSecurityPolicy:
+    ## Specifies whether a PodSecurityPolicy should be created
+    ##
+    create: false
+
+  ## Enable sticky sessions to Redis nodes via HAProxy
+  ## Very useful for long-living connections as in case of Sentry for example
+  stickyBalancing: true
+  ## Kubernetes priorityClass name for the haproxy pod
+  # priorityClassName: ""
+  ## Service type for HAProxy
+  ##
+  service:
+    type: ClusterIP
+    loadBalancerIP: []
+    # List of CIDR's allowed to connect to LoadBalancer
+    # loadBalancerSourceRanges: []
+    annotations: {}
+  serviceAccount:
+    create: false
+  ## Official HAProxy embedded prometheus metrics settings.
+  ## Ref: https://github.com/haproxy/haproxy/tree/master/contrib/prometheus-exporter
+  ##
+  metrics:
+    enabled: false
+    # prometheus port & scrape path
+    port: 9121
+    portName: http-exporter-port
+    scrapePath: /metrics
+
+    serviceMonitor:
+      # When set true then use a ServiceMonitor to configure scraping
+      enabled: true
+      # Set the namespace the ServiceMonitor should be deployed
+      # namespace: "monitoring"
+      # Set how frequently Prometheus should scrape
+      # interval: 30s
+      # Set path to redis-exporter telemtery-path
+      # telemetryPath: /metrics
+      # Set labels for the ServiceMonitor, use this to define your scrape label for Prometheus Operator
+      # labels: {}
+      # Set timeout for scrape
+      # timeout: 10s
+  init:
+    resources: {}
+  timeout:
+    connect: 4s
+    server: 12h
+    client: 12h
+    check: 2s
+  checkInterval: 1s
+
+  securityContext:
+    runAsUser: 1000
+    fsGroup: 1000
+    runAsNonRoot: true
+
+  ## Whether the haproxy pods should be forced to run on separate nodes.
+  hardAntiAffinity: true
+
+  ## Additional affinities to add to the haproxy pods.
+  additionalAffinities: {}
+
+  ## Override all other affinity settings for the haproxy pods with a string.
+  affinity: |
+
+  nodeSelector:
+    node-role.kubernetes.io/dd-worker: dd-worker
+
+  clusterDomain: cluster.local
+  # if use resolver kubernetes change ip
+  resolvers: "169.254.25.10:53"
+
+  ## Custom config-haproxy.cfg files used to override default settings. If this file is
+  ## specified then the config-haproxy.cfg above will be ignored.
+  # customConfig: |-
+    # Define configuration here
+  ## Place any additional configuration section to add to the default config-haproxy.cfg
+  # extraConfig: |-
+    # Define configuration here
+
+  ## Container lifecycle hooks
+  ## Ref: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
+  lifecycle: {}
+  
+###################################################################################################
+
+redis:
+  replicas: 3
+  redisPort: 6379
+  masterGroupName: "mymaster"
+  persistent:
+    accessModes: ReadWriteOnce
+    storage: 15Gi
+
+sentinel:
+  enabled: true
+  replicas: 3
+  # sentinelPort: 26379
+  masterSet: mymaster
+
+nodeSelector:
+  node-role.kubernetes.io/redis: redis
+
+rbac:
+  create: false
+
+networkPolicy:
+  ## Specifies whether a NetworkPolicy should be created
+  ##
+  enabled: false
+
+  ## The Policy model to apply. When set to false, only pods with the correct
+  ## client label will have network access to the port Redis is listening
+  ## on. When true, Redis will accept connections from any source
+  ## (with the correct destination port).
+  ##
+  # allowExternal: true
+
+  ## Allow connections from other namespaces. Just set label for namespace and set label for pods (optional).
+  ##
+  ingressNSMatchLabels: {}
+  ingressNSPodMatchLabels: {}
+
+serviceAccount:
+  ## Specifies whether a ServiceAccount should be created
+  ##
+  create: false
+  ## The name of the ServiceAccount to use.
+  ## If not set and create is true, a name is generated using the fullname template
+  name:
+
+rbac:
+  ## Specifies whether RBAC resources should be created
+  ##
+  create: false
+
+  role:
+    ## Rules to create. It follows the role specification
+    # rules:
+    #  - apiGroups:
+    #    - extensions
+    #    resources:
+    #      - podsecuritypolicies
+    #    verbs:
+    #      - use
+    #    resourceNames:
+    #      - gce.unprivileged
+    rules: []
+
+
+## Prometheus Exporter / Metrics
+metrics:
+  enabled: true
+  port: "9121"
+
+  ## Metrics exporter resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  # resources: {}
+
+  ## Extra arguments for Metrics exporter, for example:
+  ## extraArgs:
+  ##   check-keys: myKey,myOtherKey
+  # extraArgs: {}
+
+  ## Metrics exporter pod Annotation and Labels
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9121"
+  # podLabels: {}
+
+  # Enable this if you're using https://github.com/coreos/prometheus-operator
+  serviceMonitor:
+    enabled: true
+    ## Specify a namespace if needed
+    # namespace: monitoring
+    # fallback to the prometheus default unless specified
+    # interval: 10s
+    ## Defaults to what's used if you follow CoreOS [Prometheus Install Instructions](https://github.com/bitnami/charts/tree/master/bitnami/prometheus-operator#tldr)
+    ## [Prometheus Selector Label](https://github.com/bitnami/charts/tree/master/bitnami/prometheus-operator#prometheus-operator-1)
+    ## [Kube Prometheus Selector Label](https://github.com/bitnami/charts/tree/master/bitnami/prometheus-operator#exporters)
+    selector: {}
+      # release: prom
+
+  ## Custom PrometheusRule to be defined
+  ## The value is evaluated as a template, so, for example, the value can depend on .Release or .Chart
+  ## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
+  prometheusRule:
+    enabled: false
+    additionalLabels: {}
+    namespace: ""
+    ## Redis prometheus rules
+    ## These are just examples rules, please adapt them to your needs.
+    ## Make sure to constraint the rules to the current redis service.
+    # rules:
+    #   - alert: RedisDown
+    #     expr: redis_up{service="{{ template "redis.fullname" . }}-metrics"} == 0
+    #     for: 2m
+    #     labels:
+    #       severity: error
+    #     annotations:
+    #       summary: Redis instance {{ "{{ $labels.instance }}" }} down
+    #       description: Redis instance {{ "{{ $labels.instance }}" }} is down
+    #    - alert: RedisMemoryHigh
+    #      expr: >
+    #        redis_memory_used_bytes{service="{{ template "redis.fullname" . }}-metrics"} * 100
+    #        /
+    #        redis_memory_max_bytes{service="{{ template "redis.fullname" . }}-metrics"}
+    #        > 90
+    #      for: 2m
+    #      labels:
+    #        severity: error
+    #      annotations:
+    #        summary: Redis instance {{ "{{ $labels.instance }}" }} is using too much memory
+    #        description: |
+    #          Redis instance {{ "{{ $labels.instance }}" }} is using {{ "{{ $value }}" }}% of its available memory.
+    #    - alert: RedisKeyEviction
+    #      expr: |
+    #        increase(redis_evicted_keys_total{service="{{ template "redis.fullname" . }}-metrics"}[5m]) > 0
+    #      for: 1s
+    #      labels:
+    #        severity: error
+    #      annotations:
+    #        summary: Redis instance {{ "{{ $labels.instance }}" }} has evicted keys
+    #        description: |
+    #          Redis instance {{ "{{ $labels.instance }}" }} has evicted {{ "{{ $value }}" }} keys in the last 5 minutes.
+    rules: []
+

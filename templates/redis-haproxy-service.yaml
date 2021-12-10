@@ -1,0 +1,54 @@
+{{- if .Values.haproxy.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "redis.fullname" . }}-ha
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app: {{ template "redis.name" . }}
+    heritage: {{ .Release.Service | quote }}
+    release: {{ .Release.Name | quote }}
+    component: {{ template "redis.fullname" . }}-ha
+  annotations:
+  {{- if .Values.haproxy.service.annotations }}
+{{ toYaml .Values.haproxy.service.annotations | indent 4 }}
+  {{- end }}
+spec:
+  type: {{ default "ClusterIP" .Values.haproxy.service.type }}
+  {{- if and (eq .Values.haproxy.service.type "LoadBalancer") .Values.haproxy.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.haproxy.service.loadBalancerIP }}
+  {{- end }}
+  {{- if and (eq .Values.haproxy.service.type "LoadBalancer") .Values.haproxy.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.haproxy.service.externalTrafficPolicy }}
+  {{- end }}
+  {{- if and (eq .Values.haproxy.service.type "LoadBalancer") .Values.haproxy.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges: {{ toYaml .Values.haproxy.service.loadBalancerSourceRanges | nindent 2 }}
+  {{- end }}
+  ports:
+  - name: tcp-haproxy
+    port: {{ .Values.redis.redisPort }}
+    protocol: TCP
+    targetPort: redis
+  {{- if and (eq .Values.haproxy.service.type "NodePort") .Values.haproxy.service.nodePort }}
+    nodePort: {{ .Values.haproxy.service.nodePort }}
+  {{- end }}
+{{- if .Values.haproxy.readOnly.enabled }}
+  - name: tcp-haproxyreadonly
+    port: {{ .Values.haproxy.readOnly.port }}
+    protocol: TCP
+    targetPort: {{ .Values.haproxy.readOnly.port }}
+{{- end }}
+  - name: haproxy-stats
+    port: 7000
+    protocol: TCP
+    targetPort: 7000
+{{- if .Values.haproxy.metrics.enabled }}
+  - name: {{ .Values.haproxy.metrics.portName }}
+    port: {{ .Values.haproxy.metrics.port }}
+    protocol: TCP
+    targetPort: metrics-port
+{{- end }}
+  selector:
+    release: {{ .Release.Name }}
+    app: {{ template "redis.name" . }}-ha
+{{- end }}

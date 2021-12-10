@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "redis.fullname" . }}-configmap
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app: {{ template "redis.fullname" . }}
+data:
+{{ if .Values.haproxy.enabled }}
+  haproxy.cfg: |
+{{- include "config-haproxy.cfg" . }}
+{{- end }}
+  haproxy_init.sh: |
+{{- include "config-haproxy_init.sh" . }}

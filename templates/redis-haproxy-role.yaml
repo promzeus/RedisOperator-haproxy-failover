@@ -1,0 +1,32 @@
+{{- if .Values.haproxy.enabled }}
+{{- if and .Values.haproxy.serviceAccount.create .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "redis.fullname" . }}-ha
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app: {{ template "redis.fullname" . }}
+    component: {{ template "redis.fullname" . }}-ha
+rules:
+- apiGroups:
+    - ""
+  resources:
+    - endpoints
+  verbs:
+    - get
+{{- if .Values.haproxy.podSecurityPolicy.create }}
+- apiGroups:
+    - 'policy'
+  resources:
+    - 'podsecuritypolicies'
+  verbs:
+    - 'use'
+  resourceNames:
+    - {{ template "redis.fullname" . }}-ha
+{{- end }}
+{{- end }}
+{{- end }}
