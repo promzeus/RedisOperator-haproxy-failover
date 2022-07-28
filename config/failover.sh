@@ -22,7 +22,7 @@ subsets:
 - addresses:
   - ip: "$MASTER_IP"
   ports:
-  - name: {{ .Release.Name }}-headless
+  - name: redis
     port: 6379
     protocol: TCP
 EOF
