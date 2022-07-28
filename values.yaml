@@ -87,11 +87,11 @@ haproxy:
   init:
     resources: {}
   timeout:
-    connect: 4s
-    server: 12h
-    client: 12h
-    check: 2s
-  checkInterval: 1s
+    connect: 7s
+    server: 6h
+    client: 6h
+    check: 5s
+  checkInterval: 4s
 
   securityContext:
     runAsUser: 1000
@@ -107,8 +107,12 @@ haproxy:
   ## Override all other affinity settings for the haproxy pods with a string.
   affinity: |
 
-  nodeSelector:
-    node-role.kubernetes.io/dd-worker: dd-worker
+  # nodeSelector:
+  #   node-role.kubernetes.io/tow: tow
+
+  tolerations:
+  - effect: NoSchedule
+    operator: Exists
 
   clusterDomain: cluster.local
   # if use resolver kubernetes change ip
@@ -135,18 +139,16 @@ redis:
   persistent:
     accessModes: ReadWriteOnce
     storage: 15Gi
+  # nodeSelector:
+  #   node-role.kubernetes.io/tow-redis: tow-redis
 
 sentinel:
   enabled: true
   replicas: 3
   # sentinelPort: 26379
   masterSet: mymaster
-
-nodeSelector:
-  node-role.kubernetes.io/redis: redis
-
-rbac:
-  create: false
+  # nodeSelector:
+  #   node-role.kubernetes.io/tow-redis: tow-redis
 
 networkPolicy:
   ## Specifies whether a NetworkPolicy should be created
@@ -165,31 +167,16 @@ networkPolicy:
   ingressNSMatchLabels: {}
   ingressNSPodMatchLabels: {}
 
-serviceAccount:
-  ## Specifies whether a ServiceAccount should be created
-  ##
-  create: false
-  ## The name of the ServiceAccount to use.
-  ## If not set and create is true, a name is generated using the fullname template
-  name:
-
 rbac:
-  ## Specifies whether RBAC resources should be created
-  ##
-  create: false
+  # Specifies whether RBAC resources should be created
+  create: true
 
-  role:
-    ## Rules to create. It follows the role specification
-    # rules:
-    #  - apiGroups:
-    #    - extensions
-    #    resources:
-    #      - podsecuritypolicies
-    #    verbs:
-    #      - use
-    #    resourceNames:
-    #      - gce.unprivileged
-    rules: []
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
 
 
 ## Prometheus Exporter / Metrics
@@ -270,3 +257,8 @@ metrics:
     #          Redis instance {{ "{{ $labels.instance }}" }} has evicted {{ "{{ $value }}" }} keys in the last 5 minutes.
     rules: []
 
+failover:
+  enabled: true
+  image: lwolf/helm-kubectl-docker:v1.16.2-v2.14.3
+  pullPolicy: IfNotPresent
+  restartPolicy: Always

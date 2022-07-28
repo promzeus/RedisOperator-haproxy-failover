@@ -2,10 +2,10 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ template "redis.fullname" . }}-ha
+  name: {{ template ".fullname" . }}-ha
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app: {{ template "redis.name" . }}
+    app: {{ template ".name" . }}
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
 spec:
@@ -15,13 +15,13 @@ spec:
   replicas: {{ .Values.haproxy.replicas }}
   selector:
     matchLabels:
-      app: {{ template "redis.name" . }}-ha
+      app: {{ template ".name" . }}-ha
       release: {{ .Release.Name }}
   template:
     metadata:
-      name: {{ template "redis.fullname" . }}-ha
+      name: {{ template ".fullname" . }}-ha
       labels:
-        app: {{ template "redis.name" . }}-ha
+        app: {{ template ".name" . }}-ha
         release: {{ .Release.Name }}
         revision: "{{ .Release.Revision }}"
         {{- range $key, $value := .Values.haproxy.labels }}
@@ -33,7 +33,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/path: "{{ .Values.haproxy.metrics.scrapePath }}"
       {{- end }}
-        checksum/config: {{ print (include "config-haproxy.cfg" .) (include "config-haproxy_init.sh" .) | sha256sum }}
+        checksum/config: {{ print (include "config-haproxy.cfg" .) | sha256sum }}
       {{- if .Values.haproxy.annotations }}
 {{ toYaml .Values.haproxy.annotations | indent 8 }}
       {{- end }}
@@ -60,7 +60,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  app: {{ template "redis.name" . }}-ha
+                  app: {{ template ".name" . }}-ha
                   release: {{ .Release.Name }}
                   revision: "{{ .Release.Revision }}"
               topologyKey: kubernetes.io/hostname
@@ -70,33 +70,12 @@ spec:
               podAffinityTerm:
                 labelSelector:
                   matchLabels:
-                    app: {{ template "redis.name" . }}-ha
+                    app: {{ template ".name" . }}-ha
                     release: {{ .Release.Name }}
                     revision: "{{ .Release.Revision }}"
                 topologyKey: kubernetes.io/hostname
     {{- end }}
     {{- end }}
-      initContainers:
-      - name: config-init
-        image: {{ .Values.haproxy.image.repository }}:{{ .Values.haproxy.image.tag }}
-        imagePullPolicy: {{ .Values.haproxy.image.pullPolicy }}
-        resources:
-{{ toYaml .Values.haproxy.init.resources | indent 10 }}
-        command:
-        - sh
-        args:
-        - /readonly/haproxy_init.sh
-        volumeMounts:
-        - name: config-volume
-          mountPath: /readonly
-          readOnly: true
-        - name: data
-          mountPath: /data
-      {{- if .Values.haproxy.imagePullSecrets }}
-      imagePullSecrets: {{ toYaml .Values.haproxy.imagePullSecrets | nindent 8 }}
-      {{- end }}
-      securityContext:
-{{ toYaml .Values.haproxy.securityContext | indent 8 }}
       containers:
       - name: haproxy
         image: {{ .Values.haproxy.image.repository }}:{{ .Values.haproxy.image.tag }}
@@ -110,7 +89,7 @@ spec:
             {{- if .Values.existingSecret }}
               name: {{ .Values.existingSecret }}
             {{- else }}
-              name: {{ template "redis.fullname" . }}
+              name: {{ template ".fullname" . }}
             {{- end }}
               key: {{ .Values.authKey }}
       {{- end }}
@@ -121,7 +100,7 @@ spec:
             {{- if .Values.sentinel.existingSecret }}
               name: {{ .Values.sentinel.existingSecret }}
             {{- else }}
-              name: {{ template "redis.fullname" . }}-sentinel
+              name: {{ template ".fullname" . }}-sentinel
             {{- end }}
               key: {{ .Values.sentinel.authKey }}
       {{- end }}
@@ -154,10 +133,10 @@ spec:
         resources:
 {{ toYaml .Values.haproxy.resources | indent 10 }}
         volumeMounts:
-        - name: data
+        - name: config-volume
           mountPath: /usr/local/etc/haproxy
-        - name: shared-socket
-          mountPath: /run/haproxy
+        # - name: shared-socket
+        #   mountPath: /run/haproxy
         lifecycle:
 {{ toYaml .Values.haproxy.lifecycle | indent 10 }}
 {{- if .Values.haproxy.priorityClassName }}
@@ -166,11 +145,5 @@ spec:
       volumes:
       - name: config-volume
         configMap:
-          name: {{ template "redis.fullname" . }}-configmap
-      - name: shared-socket
-        emptyDir:
-{{ toYaml .Values.haproxy.emptyDir | indent 10 }}
-      - name: data
-        emptyDir:
-{{ toYaml .Values.haproxy.emptyDir | indent 10 }}
+          name: {{ template ".fullname" . }}-configmap
 {{- end }}

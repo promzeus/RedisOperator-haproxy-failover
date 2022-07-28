@@ -3,8 +3,5 @@ annotations:
 apiVersion: v1
 appVersion: 5.0.0
 description: redisoperator-haproxy
-maintainers:
-- email: promzeus@gmail.com
-  name: DmitryOnishko
 name: redis
-version: 0.0.1
+version: 11.3.4

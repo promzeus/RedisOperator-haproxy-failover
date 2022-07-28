@@ -1,0 +1,79 @@
+{{- if .Values.failover.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-failover
+  labels:
+    app: {{ .Release.Name }}-failover
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-failover
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      name: {{ .Release.Name }}-failover
+      labels:
+        app: {{ .Release.Name }}-failover
+    spec:
+      serviceAccountName: {{ template ".serviceAccountName" . }}
+      containers:
+      - name: {{ .Release.Name }}-failover
+        image: {{ .Values.failover.image | quote }}
+        imagePullPolicy: {{ .Values.failover.pullPolicy }}
+        command: ["nohup"]
+        args:
+          - sh
+          - /opt/failover.sh
+        volumeMounts:
+        - mountPath: /opt/
+          readOnly: true
+          name: {{ .Release.Name }}-failover
+    {{- with .Values.sentinel.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.sentinel.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      volumes:
+      - name: {{ .Release.Name }}-failover
+        configMap:
+          name: {{ .Release.Name }}-failover
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-headless
+  labels:
+    app: {{ .Release.Name }}-headless
+spec:
+  clusterIP: None
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+  selector: null
+
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  labels:
+    k8s-app: {{ .Release.Name }}-headless
+  name: {{ .Release.Name }}-headless
+subsets:
+- addresses:
+  - ip: "10.233.0.0"
+  ports:
+  - name: redis
+    port: 6379
+    protocol: TCP
+{{- end }}

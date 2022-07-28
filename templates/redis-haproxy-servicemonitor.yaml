@@ -5,7 +5,7 @@ metadata:
 {{- with .Values.haproxy.metrics.serviceMonitor.labels }}
   labels: {{ toYaml . | nindent 4}}
 {{- end }}
-  name: {{ template "redis.fullname" . }}-ha
+  name: {{ template ".fullname" . }}-ha
   namespace: {{ .Release.Namespace | quote }}
 {{- if .Values.haproxy.metrics.serviceMonitor.namespace }}
   namespace: {{ .Values.haproxy.metrics.serviceMonitor.namespace | quote }}
@@ -22,13 +22,13 @@ spec:
 {{- if .Values.haproxy.metrics.serviceMonitor.timeout }}
     scrapeTimeout: {{ .Values.haproxy.metrics.serviceMonitor.timeout }}
 {{- end }}
-  jobLabel: {{ template "redis.fullname" . }}-ha
+  jobLabel: {{ template ".fullname" . }}-ha
   namespaceSelector:
     matchNames:
     - {{ .Release.Namespace | quote }}
   selector:
     matchLabels:
-      app: {{ template "redis.name" . }}
+      app: {{ template ".name" . }}
       release: {{ .Release.Name }}
-      component: {{ template "redis.fullname" . }}-ha
+      component: {{ template ".fullname" . }}-ha
 {{- end }}

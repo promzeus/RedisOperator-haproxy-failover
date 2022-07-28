@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "redis.fullname" . }}-ha
+  name: {{ template ".fullname" . }}-ha
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app: {{ template "redis.name" . }}
+    app: {{ template ".name" . }}
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
-    component: {{ template "redis.fullname" . }}-ha
+    component: {{ template ".fullname" . }}-ha
   annotations:
   {{- if .Values.haproxy.service.annotations }}
 {{ toYaml .Values.haproxy.service.annotations | indent 4 }}
@@ -50,5 +50,5 @@ spec:
 {{- end }}
   selector:
     release: {{ .Release.Name }}
-    app: {{ template "redis.name" . }}-ha
+    app: {{ template ".name" . }}-ha
 {{- end }}
