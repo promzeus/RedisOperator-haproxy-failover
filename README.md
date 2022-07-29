@@ -4,20 +4,24 @@ Failover redis-sentinel switch.
 Works in conjunction with the redis-operator project.
 
 There are two file servers enabled in this operator. Disable the unnecessary one.
+
 1. haproxy-based
 ```
 haproxy:
   enabled: true
 ```
+`
 connection point {{project-name}}-ha:6379
+`
 
 2. Based on a bash script failover.sh 
 ```
 failover:
   enabled: true
 ```
+`
 connection point {{project-name}}-headless:6379
-
+`
 1. First, you need to install https://github.com/spotahome/redis-operator
 2. Study values.yaml for your cluster conditions.
 3. Then we install this project.
