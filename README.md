@@ -11,7 +11,7 @@ haproxy:
   enabled: true
 ```
 `
-connection point {{project-name}}-ha:6379
+master connection point {{project-name}}-ha:6379
 `
 
 haproxy can be used for small projects with low load and where there is no requirement to always hold the connection to redis
@@ -22,7 +22,7 @@ failover:
   enabled: true
 ```
 `
-connection point {{project-name}}-headless:6379
+master connection point {{project-name}}-headless:6379
 `
 
 The failover.sh solution is designed for heavy workloads. Since there is a direct connection to the service that does not have an IP but looks at the endpoint to which the IP master POD is assigned
