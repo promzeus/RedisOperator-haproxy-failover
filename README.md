@@ -3,7 +3,7 @@
 Failover redis-sentinel switch.
 Works in conjunction with the redis-operator project.
 
-There are two file servers enabled in this operator. Disable the unnecessary one.
+There are two filover enabled in this operator. Disable the unnecessary one.
 
 1. haproxy-based
 ```
