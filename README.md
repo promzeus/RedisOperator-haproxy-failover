@@ -14,6 +14,8 @@ haproxy:
 connection point {{project-name}}-ha:6379
 `
 
+haproxy can be used for small projects with low load and where there is no requirement to always hold the connection to redis
+
 2. Based on a bash script failover.sh 
 ```
 failover:
@@ -22,9 +24,12 @@ failover:
 `
 connection point {{project-name}}-headless:6379
 `
+
+The failover.sh solution is designed for heavy workloads. Since there is a direct connection to the service that does not have an IP but looks at the endpoint to which the IP master POD is assigned
+
 1. First, you need to install https://github.com/spotahome/redis-operator
 2. Study values.yaml for your cluster conditions.
 3. Then we install this project.
-4. You will have the {{project name}}-headless service. All applications need to be configured for it. This service has an endpoint-headless, the ip address of which is changed by the {{project name}}-failover operator
+
 
 The idea is not new, the logic of work is borrowed from patroni-operator 
