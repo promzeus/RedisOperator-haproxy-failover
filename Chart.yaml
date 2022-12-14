@@ -1,11 +1,7 @@
 annotations:
   category: Database
 apiVersion: v1
-home: https://github.com/promzeus/RedisOperator-haproxy-failover
-maintainers:
-  - name: Dmytro Onyshko
-    email: promzeus@gmail.com
-appVersion: 0.0.1
-description: redisoperator-ha-failover
-name: redis-failover
-version: 0.0.1
+appVersion: 5.0.0
+description: redisoperator-haproxy
+name: redis
+version: 11.3.4

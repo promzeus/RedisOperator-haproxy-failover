@@ -51,29 +51,26 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-headless
-  labels:
-    app: {{ .Release.Name }}-headless
+  name: {{ .Release.Name }}-failover
 spec:
-  clusterIP: None
+  # clusterIP: None <<< Problem with php, horizon, resolve dns. Ned to use clusterIP
+  type: ClusterIP
   ports:
-  - name: redis
+  - name: redis-failover
     port: 6379
-    targetPort: 6379
-  selector: null
+    protocol: TCP
+  # selector: null
 
 ---
 apiVersion: v1
 kind: Endpoints
 metadata:
-  labels:
-    k8s-app: {{ .Release.Name }}-headless
-  name: {{ .Release.Name }}-headless
+  name: {{ .Release.Name }}-failover
 subsets:
 - addresses:
-  - ip: "10.233.0.0"
+  - ip: "10.233.0.1"
   ports:
-  - name: redis
+  - name: redis-failover
     port: 6379
     protocol: TCP
 {{- end }}

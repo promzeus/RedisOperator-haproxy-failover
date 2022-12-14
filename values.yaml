@@ -14,10 +14,10 @@ global:
 
 ####################################################################################################
 haproxy:
-  enabled: true
+  enabled: false
   # Enable if you want a dedicated port in haproxy for redis-slaves
   readOnly:
-    enabled: true
+    enabled: false
     port: 6380
   replicas: 1
   image:
@@ -108,7 +108,7 @@ haproxy:
   affinity: |
 
   # nodeSelector:
-  #   node-role.kubernetes.io/tow: tow
+  #   node-role.kubernetes.io/dd-worker: dd-worker
 
   tolerations:
   - effect: NoSchedule
@@ -140,7 +140,7 @@ redis:
     accessModes: ReadWriteOnce
     storage: 15Gi
   # nodeSelector:
-  #   node-role.kubernetes.io/tow-redis: tow-redis
+  #   node-role.kubernetes.io/dd-redis: dd-redis
 
 sentinel:
   enabled: true
@@ -148,7 +148,7 @@ sentinel:
   # sentinelPort: 26379
   masterSet: mymaster
   # nodeSelector:
-  #   node-role.kubernetes.io/tow-redis: tow-redis
+  #   node-role.kubernetes.io/dd-redis: dd-redis
 
 networkPolicy:
   ## Specifies whether a NetworkPolicy should be created

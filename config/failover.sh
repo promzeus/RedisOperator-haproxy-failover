@@ -7,7 +7,7 @@ function getMasterIP() {
 
 function getKubeEndpointIP() {
     # echo "get kube endpoint ip"
-    KUBE_IP=$(kubectl get ep/{{ .Release.Name }}-headless -ojsonpath="{.subsets..addresses..ip}")
+    KUBE_IP=$(kubectl get ep/{{ .Release.Name }}-failover -ojsonpath="{.subsets..addresses..ip}")
 }
 
 function setKubeEndpointIP() {
@@ -15,14 +15,14 @@ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Endpoints
 metadata:
-  name: {{ .Release.Name }}-headless
+  name: {{ .Release.Name }}-failover
   labels:
-    k8s-app: {{ .Release.Name }}-headless
+    k8s-app: {{ .Release.Name }}-failover
 subsets:
 - addresses:
   - ip: "$MASTER_IP"
   ports:
-  - name: redis
+  - name: redis-failover
     port: 6379
     protocol: TCP
 EOF
@@ -47,7 +47,7 @@ if [ -z $MASTER_IP ]; then
         else
             # echo "$DATE kube endpoint ip is not empty, run check master ip == kube ip"
             if [ "$MASTER_IP" == "$KUBE_IP" ]; then
-                echo "$DATE  Nothing to change. Sentinel master ip:$MASTER_IP is equal to kube endpoint ip:$KUBE_IP, sleep 10s"
+                echo "$DATE  Nothing to change. Sentinel master ip:$MASTER_IP is equal to kube endpoint ip:$KUBE_IP, sleep 5s"
             else
                 echo "$DATE sentinel master ip is not equal to kube endpoint ip"
                 echo "$DATE Run set $MASTER_IP to kube epoint"
@@ -58,6 +58,6 @@ if [ -z $MASTER_IP ]; then
     fi
 fi
 
-sleep 10
+sleep 5
 
 done
