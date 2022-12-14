@@ -16,8 +16,6 @@ apiVersion: v1
 kind: Endpoints
 metadata:
   name: {{ .Release.Name }}-failover
-  labels:
-    k8s-app: {{ .Release.Name }}-failover
 subsets:
 - addresses:
   - ip: "$MASTER_IP"
